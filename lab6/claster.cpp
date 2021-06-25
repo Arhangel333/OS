@@ -1,13 +1,6 @@
-#include <time.h>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <iostream>
 #include "commands.hpp"
-#include <zmq.hpp>
-#include <unistd.h>
 
-typedef struct MD
+/* typedef struct MD
 {
 	int clasterId;
 	int messageNumber;
@@ -30,79 +23,90 @@ MD operator=(std::string s){
 		}
 		return m;
 	}
-} MessageData;
+} MessageData; */
 
-int main(int argc, char const *argv[])
-{
+std::vector<int> vector(7);
+int havechild = 0;
 
-	std::vector<int> vectr(7);
-	zmq::context_t context(1);
-	srand(time(0));
-	int clasterId = getpid();
-	printf("Clasterid %d Starting...\n", clasterId);
-	std::string msg("Test message");
-	std::string cmd;
-
-	while(1){//для ввода и отправки сообщений цикл
-
-
-	while(1==true){
-        getline(std::cin, cmd);
-		//std::cout<<cmd<<std::endl;
-        if(cmd == "create"){//топология - список, добавление: [create id pid]
-			int cid = fork();
-			if (cid == -1)
+void stringWarker(std::string &msg, zmq::socket_t &senderSocket){
+	std::string cmd, line;
+	printf("Claster: Введите: command  <pid> <id>\n");
+	getline(std::cin, line);
+	std::cout<<line<<std::endl;
+	int id, pid;
+	getinfo(line, cmd, id, pid);//cmd = word(line);
+	std::cout<<cmd<<"_"<<std::endl;
+	if(cmd == "create"){		
+		//id = atoi(word(line).c_str());
+		//pid = atoi(word(line).c_str());
+		havechild = 1;
+		printf("printf: %d %d\n", id, pid);
+		if(inVector(id, vector)){
+			printf("Claster: %d-node is existing already\n", id);
+			msg = "abort";
+			return;		
+		}else{
+			printf("Claster: Node can be created\n");
+		}
+		if(pid == -1){
+			
+			int childid = fork();
+			if (childid == -1)
 			{ //error
 				perror("Bad fork1\n");
 				exit(0);
 			}
-			if(cid > 0)//for parent
+			if(childid == 0)//for child
 			{
 				printf("PREEXEC\n");
-				execl("child", "child", NULL);
+				std::string cid = std::to_string(id);
+				execl("child", "child", cid.c_str(), "8080", NULL);
 			}
-			msg = "create";
-			break;
-        }
-        else if(cmd == "remove"){// [remove id]
-
-        }
-        else if(cmd == "exec"){//локальный целочисленный словарь [exec id name value]     //map
-
-        }
-        else if(cmd == "heartbit"){//проверка работоспособности узлов [heartbit 2000]
-			execl("ps", "ps", NULL);
-        }
-        else if(cmd == "ping"){//проверка работоспособности узла [ping id]
-
-        }
-		else if(cmd == "end"){//завершение программы
-			if(kill(-1, -9) == -1){
-				perror("kill foalt\n");
-				//break;
+			msg = "chcreate " + std::to_string(id) + " " + std::to_string(pid);
+			std::cout<<msg<<"<<<<<<<"<<std::endl;
+		}else{
+			msg = "create " + std::to_string(id) + " " + std::to_string(pid);
+			std::cout<<msg<<" will be sent"<<std::endl;
+			
+		}
+		
+	}else if((cmd == "finish")||(cmd == "end")||(cmd == "exit")){
+		msg = "end";
+		if(havechild > 0)
+		try{
+			sendM(senderSocket, msg);
+		}catch(...){
+			printf("Claster:error: %d: %s\n", zmq_errno(), zmq_strerror(zmq_errno()));
+			exit(0);
 			}
-			return 0;
-        }
-    }
+		printf("Claster: Working is finishing...\n");
+		exit(0);
+	}
+}
 
+int main(int argc, char const *argv[])
+{
+    vector.push_back(-1);
+	std::vector<int> vectr(7);
+	zmq::context_t context(1);
+	zmq::socket_t senderSocket(context, ZMQ_REQ);
+	printf("Claster: Connection\n");
+	bindSocket(senderSocket);
+	printf("loly\n");
+	srand(time(0));
+
+	std::string msg("Test message");
 	
 
-	zmq::socket_t senderSocket(context, ZMQ_REQ);
-	bindSocket(senderSocket);
-	printf("Connection\n");
-	//getPortName(zmq_connect(senderSocket, "tcp://127.0.0.1:8080");
+	while(1){//для ввода и отправки сообщений цикл
+
+	stringWarker(msg, senderSocket);//читает комманду и создаёт сообщение соотв.
+	if(msg != "abort"){//значит что не произошла ошибка в stringWarker()
+	
+	
 	int count = 0;
 
-	//for (;;){
-		/* MessageData md;
-		md.clasterId = clasterId;
-		md.messageNumber = count;
-		memcpy(md.message, &msg, msg.size());
-		zmq_msg_t zmqMessage;
-		zmq_msg_init_size(&zmqMessage, sizeof(MessageData));
-		memcpy(zmq_msg_data(&zmqMessage), &md, sizeof(MessageData)); */
-
-		printf("Sending: - %d\n", count);
+		printf("Claster: Sending: - %d\n", count);
 		try{
 			sendM(senderSocket, msg);
 		}catch(...){
@@ -110,23 +114,16 @@ int main(int argc, char const *argv[])
 			exit(0);
 			}
 		
-		//int send = zmq_msg_send(&zmqMessage, senderSocket, 0);
 		printf("sent\n");
-		//zmq_msg_close(&zmqMessage);
 
 		std::string reply;
-		//zmq_msg_init(&reply);
 		printf("Claster: reciving reply\n");
 		reply = receiveMessage(senderSocket);
-		//zmq_msg_recv(&reply, senderSocket, 0);
-		//size_t repSize = zmq_msg_size(&reply);
-		printf("Received:_%s_\n", reply.c_str());
-		//zmq_msg_close(&reply);
-		return 0;
-		//sleep(1000);
+		printf("Claster: Received:_%s_\n", reply.c_str());
 		count++;
+	}//abortend
 
-	}
-}
+	}//whileend
+}//mainend
 
 
