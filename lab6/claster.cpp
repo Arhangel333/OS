@@ -39,17 +39,22 @@ void stringWarker(std::string &msg, zmq::socket_t &senderSocket){
 	if(cmd == "create"){		
 		//id = atoi(word(line).c_str());
 		//pid = atoi(word(line).c_str());
-		havechild = 1;
+		
 		printf("printf: %d %d\n", id, pid);
 		if(inVector(id, vector)){
 			printf("Claster: %d-node is existing already\n", id);
 			msg = "abort";
 			return;		
+		}else if(!inVector(pid, vector)){
+			printf("Parent node is not existing\n");
+			msg = "abort";
+			return;	
 		}else{
 			printf("Claster: Node can be created\n");
+			vector.push_back(id);
 		}
-		if(pid == -1){
-			
+			if(havechild != 1){
+				havechild = 1;
 			int childid = fork();
 			if (childid == -1)
 			{ //error
@@ -58,17 +63,13 @@ void stringWarker(std::string &msg, zmq::socket_t &senderSocket){
 			}
 			if(childid == 0)//for child
 			{
-				printf("PREEXEC\n");
+				printf("Claster(%d): PREEXEC\n", getpid());
 				std::string cid = std::to_string(id);
 				execl("child", "child", cid.c_str(), "8080", NULL);
 			}
-			msg = "chcreate " + std::to_string(id) + " " + std::to_string(pid);
-			std::cout<<msg<<"<<<<<<<"<<std::endl;
-		}else{
+			}//havechild == 0
 			msg = "create " + std::to_string(id) + " " + std::to_string(pid);
-			std::cout<<msg<<" will be sent"<<std::endl;
-			
-		}
+			std::cout<<msg<<"<<<<<<<"<<std::endl;
 		
 	}else if((cmd == "finish")||(cmd == "end")||(cmd == "exit")){
 		msg = "end";
@@ -87,12 +88,12 @@ void stringWarker(std::string &msg, zmq::socket_t &senderSocket){
 int main(int argc, char const *argv[])
 {
     vector.push_back(-1);
+	int count = 0;
 	std::vector<int> vectr(7);
 	zmq::context_t context(1);
 	zmq::socket_t senderSocket(context, ZMQ_REQ);
-	printf("Claster: Connection\n");
+	printf("Claster(%d): Connection\n", getpid());
 	bindSocket(senderSocket);
-	printf("loly\n");
 	srand(time(0));
 
 	std::string msg("Test message");
@@ -104,7 +105,7 @@ int main(int argc, char const *argv[])
 	if(msg != "abort"){//значит что не произошла ошибка в stringWarker()
 	
 	
-	int count = 0;
+	
 
 		printf("Claster: Sending: - %d\n", count);
 		try{
@@ -114,7 +115,7 @@ int main(int argc, char const *argv[])
 			exit(0);
 			}
 		
-		printf("sent\n");
+		printf("Claster: sent\n");
 
 		std::string reply;
 		printf("Claster: reciving reply\n");
