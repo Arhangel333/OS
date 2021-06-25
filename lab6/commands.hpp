@@ -7,6 +7,10 @@
 #include <zmq.hpp>
 #include <sys/types.h>
 #include <signal.h>
+#include <cstring>
+#include <vector>
+#include <time.h>
+#include <vector>
 
 // send message to the particular socket
 bool sendM(zmq::socket_t &socket, const std::string &message_string)
@@ -17,8 +21,8 @@ bool sendM(zmq::socket_t &socket, const std::string &message_string)
     // message content init
     //printf("Done 1\n");
     memcpy(message.data(), message_string.c_str(), message_string.size());
-    std::cout<<"Size = "<<message_string.size()<<" Message = "<< message_string.c_str()<<std::endl;
-    printf("Done 2\n");
+    //std::cout<<"Size = "<<message_string.size()<<" Message = "<< message_string.c_str()<<std::endl;
+    //printf("Done 2\n");
     return socket.send(message);
 }
 
@@ -52,40 +56,83 @@ std::string getPortName(int port)
     return "tcp://127.0.0.1:" + std::to_string(port);
 }
 
-int bindSocket(zmq::socket_t &socket)
+int bindSocket(zmq::socket_t &socket, int port = 8080)
 {
-    int port = 8080;
+    //int port = 8080;
     // create endpoint and bind it to the socket
     while (true) {
         try {
             socket.bind(getPortName(port));
+            printf("%d: %d - Free bind\n", getpid(), port);
             break;
         }
         catch (...) {
+            printf("%d: %d - Занято bind\n", getpid(), port);
             port++;
         }
     }
     return port;
 }
 
-int connectSocket(zmq::socket_t &socket)
+int connectSocket(zmq::socket_t &socket, int port = 8080)
 {
-    int port = 8080;
+    //int port = 8080;
     // create endpoint and bind it to the socket
     while (true) {
         try {
             socket.connect(getPortName(port));
+            printf("%d: %d - Free connect\n", getpid(), port);
             break;
         }
         catch (...) {
+            printf("%d: %d - Занято connect\n", getpid(), port);
             port++;
         }
     }
     return port;
 }
 
-/* void createNode(int id, int port)
-{
-    // new node process
-    execl("./node.cpp", "child", std::to_string(id).c_str(), std::to_string(port).c_str(), NULL);
-} */
+std::string word(std::string &str){
+    
+    int size = str.size();
+    //printf("size = %d\n", size);
+    if(size != 0){
+        std::string word, newstr("");
+        int i = 0;
+        while((str[i] != ' ')&&(size - i != 0)){
+            //printf("%c[%d]\n",str[i], i);
+            word += str[i];
+            i++;
+        }
+        //printf("Newline\n");
+        i++;
+        while(size - i > 0){
+            //printf("%c[%d]\n",str[i], i);
+            newstr += str[i];
+            i++;
+        }
+        //std::cout<<newstr<<std::endl;
+        str = newstr;
+        return word;
+    }
+    std::string s(" ");
+    return s;
+}
+
+template<typename T>
+bool inVector(T n, std::vector<T> vect){
+    for (int i = 0; i < vect.size(); i++)
+    {
+        if(vect[i] == n){
+            return true;
+        }
+    }
+    return false;
+}
+
+void getinfo(std::string msg, std::string &cmd, int &id, int &pid){
+    cmd = word(msg);
+    id = atoi(word(msg).c_str());
+	pid = atoi(word(msg).c_str());
+    return;
+}
