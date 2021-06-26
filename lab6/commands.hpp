@@ -12,6 +12,8 @@
 #include <time.h>
 #include <vector>
 
+std::string swich = "swich";
+
 // send message to the particular socket
 bool sendM(zmq::socket_t &socket, const std::string &message_string)
 {
@@ -130,9 +132,20 @@ bool inVector(T n, std::vector<T> vect){
     return false;
 }
 
-void getinfo(std::string msg, std::string &cmd, int &id, int &pid){
-    cmd = word(msg);
-    id = atoi(word(msg).c_str());
-	pid = atoi(word(msg).c_str());
+void getinfo(std::string const msg, std::string &cmd, int &id, int &pid){
+    std::string nm = msg;
+    cmd = word(nm);
+    id = atoi(word(nm).c_str());
+	pid = atoi(word(nm).c_str());
     return;
+}
+template<class T>
+T find(T id, std::vector<T> vec){
+    int i;
+    for(i = 0;i < vec.size();i++){
+        if(vec[i] == id){
+            return i;
+        }
+    }
+    return i;
 }
