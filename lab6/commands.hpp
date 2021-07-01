@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <cstring>
 #include <vector>
+#include <map>
 #include <time.h>
 #include <vector>
 
@@ -65,11 +66,11 @@ int bindSocket(zmq::socket_t &socket, int port = 8080)
     while (true) {
         try {
             socket.bind(getPortName(port));
-            printf("%d: %d - Free bind\n", getpid(), port);
+            //printf("%d: %d - Free bind\n", getpid(), port);
             break;
         }
         catch (...) {
-            printf("%d: %d - Занято bind\n", getpid(), port);
+            //printf("%d: %d - Занято bind\n", getpid(), port);
             port++;
         }
     }
@@ -83,11 +84,11 @@ int connectSocket(zmq::socket_t &socket, int port = 8080)
     while (true) {
         try {
             socket.connect(getPortName(port));
-            printf("%d: %d - Free connect\n", getpid(), port);
+            //printf("%d: %d - Free connect\n", getpid(), port);
             break;
         }
         catch (...) {
-            printf("%d: %d - Занято connect\n", getpid(), port);
+            //printf("%d: %d - Занято connect\n", getpid(), port);
             port++;
         }
     }
